@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 import re
 
 # Compile the regular expression once to check if word is decimal
-_DECIMAL_PATTERN = re.compile(r'^\d+(\.\d+)?$')
+_DECIMAL_PATTERN = re.compile(r'\d+(\.\d+)?')
 
 
 def generator_numbers(text: str) -> Generator[Decimal, None, None]:
@@ -22,12 +22,11 @@ def generator_numbers(text: str) -> Generator[Decimal, None, None]:
     Yields:
         Decimal: The numbers found in the text.
     """
-    for word in text.split():
-        if _DECIMAL_PATTERN.match(word):
-            try:
-                yield Decimal(word)
-            except InvalidOperation:
-                continue  # Skip invalid values
+    for match in _DECIMAL_PATTERN.finditer(text):
+        try:
+            yield Decimal(match.group(0))
+        except InvalidOperation:
+            continue  # Skip invalid values
 
 
 def sum_profit(text: str, func: Callable[[str], Generator[Decimal, None, None]]) -> Decimal:
