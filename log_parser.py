@@ -28,6 +28,7 @@ from collections import defaultdict, namedtuple
 # Define the named tuple for log entries
 LogEntry = namedtuple('LogEntry', ['date', 'time', 'level', 'message'])
 
+
 def parse_log_line(line: str) -> LogEntry:
     """
     Parse a single log line into a named tuple.
@@ -38,8 +39,12 @@ def parse_log_line(line: str) -> LogEntry:
     Returns:
         LogEntry: A named tuple with fields "date", "time", "level", and "message".
     """
-    date, time, level, message = line.strip().split(' ', 3)
+    try:
+        date, time, level, message = line.split(' ', 3)
+    except ValueError as exc:
+        raise ValueError(f"Log line '{line}' is not in the expected format.") from exc
     return LogEntry(date, time, level, message)
+
 
 def load_logs(file_path: str) -> list:
     """
@@ -60,6 +65,7 @@ def load_logs(file_path: str) -> list:
     with path.open(mode="r", encoding="UTF-8") as file:
         return file.readlines()
 
+
 def filter_logs_by_level(logs: list, level: str) -> list:
     """
     Filter logs by the specified level.
@@ -72,6 +78,7 @@ def filter_logs_by_level(logs: list, level: str) -> list:
         list: A list of filtered LogEntry named tuples.
     """
     return [log for log in logs if log.level == level]
+
 
 def count_logs_by_level(logs: list) -> dict:
     """
@@ -88,6 +95,7 @@ def count_logs_by_level(logs: list) -> dict:
         count_lvl_log_dict[log.level] += 1
     return count_lvl_log_dict
 
+
 def display_log_counts(counts: dict):
     """
     Display log counts in a table format.
@@ -98,15 +106,19 @@ def display_log_counts(counts: dict):
     headers = ["Рівень логування", "Кількість"]
     separator = "-" * 17 + "|" + "-" * 10
 
-    max_level_len = max(len(headers[0]), max(len(level) for level in counts.keys()))
-    max_count_len = max(len(headers[1]), max(len(str(count)) for count in counts.values()))
+    max_level_len = max(len(headers[0]), max(
+        len(level) for level in counts.keys()))
+    max_count_len = max(len(headers[1]), max(
+        len(str(count)) for count in counts.values()))
 
-    header_row = f"{headers[0]:<{max_level_len}} | {headers[1]:<{max_count_len}}"
+    header_row = f"{headers[0]:<{max_level_len}} | {
+        headers[1]:<{max_count_len}}"
 
     print(header_row)
     print(separator)
     for level, count in counts.items():
         print(f"{level:<{max_level_len}} | {count:<{max_count_len}}")
+
 
 def display_selected_level(selected_level: str, filtered_logs: list):
     """
@@ -118,14 +130,19 @@ def display_selected_level(selected_level: str, filtered_logs: list):
     for log in filtered_logs:
         print(' '.join(log))
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python log_parser.py <log_file_path> [<log_level>]")
         sys.exit(1)
     file_path = sys.argv[1]
     lines = load_logs(file_path)
-
-    logs = [parse_log_line(line) for line in lines]
+    try:
+        lines = load_logs(file_path)
+        logs = [parse_log_line(line) for line in lines]
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
     log_counts = count_logs_by_level(logs)
     display_log_counts(log_counts)
